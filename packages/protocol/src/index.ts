@@ -2,8 +2,6 @@ export type NarrationClientRole = "ui" | "producer" | "observer";
 
 export type NarrationEmotion =
   | "neutral"
-  | "normal"
-  | "joy"
   | "happy"
   | "angry"
   | "sad"
