@@ -109,6 +109,7 @@ export class NarrationRelayServer {
       type: "narration:say",
       id,
       text: input.text,
+      thought: input.thought?.trim() || undefined,
       speaker: input.speaker,
       emotion: input.emotion ?? "neutral",
       interrupt: input.interrupt ?? false,

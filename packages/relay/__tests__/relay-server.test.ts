@@ -130,6 +130,7 @@ describe("NarrationRelayServer", () => {
       await client.connect();
       await client.say({
         text: "Fast callout.",
+        thought: "This line needs to interrupt lower-priority narration.",
         pace: "fast",
         intensity: "high",
         priority: 10,
@@ -138,6 +139,7 @@ describe("NarrationRelayServer", () => {
       });
       assert.ok(relayed);
       assert.equal(relayed.type, "narration:say");
+      assert.equal(relayed.thought, "This line needs to interrupt lower-priority narration.");
       assert.equal(relayed.pace, "fast");
       assert.equal(relayed.intensity, "high");
       assert.equal(relayed.priority, 10);

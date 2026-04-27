@@ -49,6 +49,7 @@ export interface NarrationSayMessage {
   type: "narration:say";
   id: string;
   text: string;
+  thought?: string;
   speaker?: string;
   emotion?: NarrationEmotion | string;
   interrupt?: boolean;

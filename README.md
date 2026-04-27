@@ -91,6 +91,7 @@ Producer utterance:
   "type": "narration:say",
   "id": "utt_001",
   "text": "ここは慎重にいきます。",
+  "thought": "安全なルートを探している。",
   "speaker": "nike",
   "emotion": "thinking",
   "interrupt": false,
@@ -155,6 +156,12 @@ Speaking style controls:
 | `priority` | number, default `0` | Higher values play before lower values in the UI queue. |
 | `subtitleOnly` | boolean, default `false` | Shows subtitles and completes without TTS synthesis. |
 
+Thought logging:
+
+| Field | Description |
+|---|---|
+| `thought` | Optional producer-side thought or reasoning summary. It is not spoken by TTS; the bundled UI writes it to the event log as a separate `thought` entry before the corresponding `say` entry. |
+
 Queue controls:
 
 | Field | Values | Description |
@@ -207,6 +214,7 @@ const client = new NarrationClient({
 await client.connect();
 const result = await client.say({
   text: "ここは慎重にいきます。",
+  thought: "安全なルートを探している。",
   speaker: "nike",
   emotion: "thinking",
   pace: "slow",

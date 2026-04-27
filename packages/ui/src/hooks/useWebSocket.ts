@@ -85,6 +85,11 @@ function subtitleDurationMs(text: string): number {
   return clamp(800 + text.length * 45, 1000, 3500)
 }
 
+function logPreview(text: string, maxLength = 180): string {
+  const trimmed = text.trim()
+  return trimmed.length > maxLength ? `${trimmed.slice(0, maxLength)}...` : trimmed
+}
+
 function waitFor(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal.aborted) {
@@ -155,7 +160,10 @@ export function useWebSocket(pipeline: TTSPipeline) {
     currentMessage.current = msg
     setEmotion(emotion)
     send({ type: 'narration:started', id: msg.id, timestamp: Date.now() })
-    addEventLog('say', msg.text.substring(0, 100))
+    if (msg.thought?.trim()) {
+      addEventLog('thought', logPreview(msg.thought))
+    }
+    addEventLog('say', logPreview(msg.text, 100))
 
     try {
       let durationMs = 0
