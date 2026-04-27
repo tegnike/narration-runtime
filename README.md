@@ -100,6 +100,25 @@ Producer utterance:
 }
 ```
 
+Emotion types:
+
+| Input emotion | UI display emotion | Description |
+|---|---|---|
+| `neutral` | `neutral` | Default calm expression |
+| `normal` | `neutral` | Compatibility alias for neutral |
+| `happy` | `happy` | Positive or pleased expression |
+| `joy` | `happy` | Compatibility alias for happy |
+| `surprised` | `happy` | Compatibility alias currently rendered as happy |
+| `angry` | `angry` | Angry or frustrated expression |
+| `sad` | `sad` | Sad, worried, or unfavorable expression |
+| `thinking` | `thinking` | Thinking or considering expression |
+| unknown string | `neutral` | Unknown values are accepted and rendered as neutral |
+
+The protocol type exposes `emotion?: NarrationEmotion | string` so producers
+can send future custom values without breaking the relay. The bundled UI maps
+values to the five available character asset directories: `neutral`, `happy`,
+`angry`, `sad`, and `thinking`.
+
 Terminal statuses returned to producers:
 
 - `narration:completed`
