@@ -4,6 +4,7 @@ import { useStreamStore } from '../store/stream-store'
 export function Subtitle() {
   const currentSubtitle = useStreamStore((s) => s.currentSubtitle)
   const isSpeaking = useStreamStore((s) => s.isSpeaking)
+  const isTTSBusy = useStreamStore((s) => s.isTTSBusy)
   const [visible, setVisible] = useState(false)
   const [displayText, setDisplayText] = useState('')
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -20,7 +21,16 @@ export function Subtitle() {
   }, [currentSubtitle])
 
   useEffect(() => {
-    if (!isSpeaking && displayText) {
+    const shouldStayVisible = Boolean(currentSubtitle) || isSpeaking || isTTSBusy
+    if (shouldStayVisible && displayText) {
+      setVisible(true)
+      if (fadeTimerRef.current) {
+        clearTimeout(fadeTimerRef.current)
+        fadeTimerRef.current = null
+      }
+      return
+    }
+    if (displayText) {
       fadeTimerRef.current = setTimeout(() => {
         setVisible(false)
       }, 2000)
@@ -30,7 +40,7 @@ export function Subtitle() {
         clearTimeout(fadeTimerRef.current)
       }
     }
-  }, [isSpeaking, displayText])
+  }, [currentSubtitle, isSpeaking, isTTSBusy, displayText])
 
   return (
     <div className="biim-dialogue biim-border biim-border-inset">

@@ -26,7 +26,7 @@ export function CharacterDisplay() {
 
   return (
     <div
-      className="biim-character flex items-end justify-center"
+      className="biim-character"
       style={{ transform: `translateY(${bounceY}px)` }}
     >
       <img
