@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "declaration": true,
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "composite": true,
+    "paths": {
+      "@narration-runtime/protocol": ["./packages/protocol/src/index.ts"],
+      "@narration-runtime/client": ["./packages/client/src/index.ts"],
+      "@narration-runtime/relay": ["./packages/relay/src/index.ts"]
+    }
+  }
+}

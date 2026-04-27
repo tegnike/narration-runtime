@@ -1,0 +1,29 @@
+{
+  "name": "narration-runtime",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "tsc -b packages/protocol packages/client packages/relay packages/ui && vite build --config packages/ui/vite.config.ts",
+    "test": "tsx --test \"packages/*/__tests__/*.test.ts\"",
+    "relay": "tsx packages/relay/src/cli.ts",
+    "ui:dev": "vite --host 127.0.0.1 --config packages/ui/vite.config.ts",
+    "ui:build": "tsc -b packages/ui && vite build --config packages/ui/vite.config.ts",
+    "smoke": "tsx scripts/e2e-smoke.ts",
+    "smoke:ai-agent-game-streamer": "tsx scripts/e2e-ai-agent-game-streamer.ts"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.5.0",
+    "lightningcss-darwin-arm64": "^1.32.0",
+    "rollup": "npm:@rollup/wasm-node@^4.60.2",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "@narration-runtime/relay",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "narration-relay": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "start": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "@narration-runtime/protocol": "0.1.0",
+    "ws": "^8.18.0"
+  }
+}

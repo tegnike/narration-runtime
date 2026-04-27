@@ -1,0 +1,251 @@
+@import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
+
+/* biim式レトロゲーム風スタイル */
+
+:root {
+  --biim-border: #c0c0c0;
+  --biim-border-dark: #808080;
+  --biim-border-light: #ffffff;
+  --biim-bg: #000080;
+  --biim-panel-bg: #c0c0c0;
+  --biim-text: #000000;
+  --biim-accent: #ff0000;
+  --biim-highlight: #ffff00;
+}
+
+/* Minimal utility classes used by the runtime UI. */
+.h-screen { height: 100vh; }
+.w-screen { width: 100vw; }
+.h-full { height: 100%; }
+.h-\[200px\] { height: 200px; }
+.max-w-2xl { max-width: 42rem; }
+.flex { display: flex; }
+.flex-1 { flex: 1 1 0%; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.items-end { align-items: flex-end; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-1 { gap: 0.25rem; }
+.gap-2 { gap: 0.5rem; }
+.gap-4 { gap: 1rem; }
+.min-h-0 { min-height: 0; }
+.min-w-0 { min-width: 0; }
+.overflow-hidden { overflow: hidden; }
+.relative { position: relative; }
+.absolute { position: absolute; }
+.inset-0 { inset: 0; }
+.bg-black { background: #000000; }
+.bg-\[\#c0c0c0\] { background: #c0c0c0; }
+.hover\:bg-\[\#d0d0d0\]:hover { background: #d0d0d0; }
+.p-0 { padding: 0; }
+.p-2 { padding: 0.5rem; }
+.p-8 { padding: 2rem; }
+.px-4 { padding-left: 1rem; padding-right: 1rem; }
+.px-8 { padding-left: 2rem; padding-right: 2rem; }
+.py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+.py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mx-auto { margin-left: auto; margin-right: auto; }
+.text-center { text-align: center; }
+.text-xs { font-size: 0.75rem; line-height: 1rem; }
+.text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+.text-black { color: #000000; }
+.text-green-600 { color: #16a34a; }
+.font-bold { font-weight: 700; }
+.cursor-pointer { cursor: pointer; }
+.object-contain { object-fit: contain; }
+.transition-opacity { transition-property: opacity; }
+.duration-500 { transition-duration: 500ms; }
+.opacity-100 { opacity: 1; }
+.opacity-0 { opacity: 0; }
+.space-y-1 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.25rem; }
+.active\:biim-border-inset:active {
+  border-color: var(--biim-border-dark) var(--biim-border-light) var(--biim-border-light) var(--biim-border-dark);
+  box-shadow:
+    inset 1px 1px 0 var(--biim-border-dark),
+    inset -1px -1px 0 var(--biim-border-light);
+}
+
+/* レトロゲーム風のボーダー（立体的） */
+.biim-border {
+  border: 3px solid;
+  border-color: var(--biim-border-light) var(--biim-border-dark) var(--biim-border-dark) var(--biim-border-light);
+  box-shadow:
+    inset 1px 1px 0 var(--biim-border-light),
+    inset -1px -1px 0 var(--biim-border-dark);
+}
+
+.biim-border-inset {
+  border: 3px solid;
+  border-color: var(--biim-border-dark) var(--biim-border-light) var(--biim-border-light) var(--biim-border-dark);
+  box-shadow:
+    inset 1px 1px 0 var(--biim-border-dark),
+    inset -1px -1px 0 var(--biim-border-light);
+}
+
+/* パネルスタイル */
+.biim-panel {
+  background: var(--biim-panel-bg);
+  font-family: 'DotGothic16', 'MS Gothic', 'ＭＳ ゴシック', monospace;
+}
+
+/* タイトルバー */
+.biim-title {
+  background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
+  color: white;
+  padding: 2px 6px;
+  font-size: 12px;
+  font-weight: bold;
+  font-family: 'DotGothic16', 'MS Gothic', monospace;
+}
+
+/* 情報エリアの各セクション */
+.biim-section {
+  background: var(--biim-panel-bg);
+  margin: 4px;
+}
+
+.biim-section-title {
+  background: #000080;
+  color: #ffff00;
+  padding: 2px 8px;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+  font-family: 'DotGothic16', 'MS Gothic', monospace;
+}
+
+.biim-section-content {
+  padding: 8px;
+  font-size: 14px;
+  color: var(--biim-text);
+  font-family: 'DotGothic16', 'MS Gothic', monospace;
+}
+
+/* タイマー表示 */
+.biim-timer {
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  font-size: 32px;
+  font-weight: bold;
+  color: #00ff00;
+  text-shadow: 2px 2px 0 #004400;
+  background: #000000;
+  padding: 4px 16px;
+}
+
+/* 区間タイム */
+.biim-split {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 4px;
+  border-bottom: 1px dotted #808080;
+  font-size: 12px;
+}
+
+.biim-split:last-child {
+  border-bottom: none;
+}
+
+.biim-split-current {
+  background: #ffff00;
+  font-weight: bold;
+}
+
+.biim-split-ahead {
+  color: #00aa00;
+}
+
+.biim-split-behind {
+  color: #ff0000;
+}
+
+/* ガバ集計 */
+.biim-gaba-count {
+  font-size: 48px;
+  font-weight: bold;
+  color: #ff0000;
+  text-align: center;
+  font-family: 'DotGothic16', 'Impact', monospace;
+}
+
+/* 字幕スタイル（biim式） */
+.biim-subtitle {
+  background: rgba(0, 0, 0, 0.85);
+  border: 2px solid #ffffff;
+  padding: 8px 16px;
+  font-family: 'DotGothic16', 'MS Gothic', monospace;
+  font-size: 20px;
+  color: #ffffff;
+  text-shadow: 2px 2px 0 #000000;
+}
+
+/* ゲーム画面エリア */
+.biim-game-area {
+  background: #000000;
+  aspect-ratio: 16/9;
+}
+
+/* 全体のレイアウト背景 */
+.biim-layout {
+  background: var(--biim-bg);
+  font-family: 'DotGothic16', 'MS Gothic', monospace;
+}
+
+/* プログレスバー */
+.biim-progress {
+  height: 20px;
+  background: #404040;
+  border: 2px solid;
+  border-color: var(--biim-border-dark) var(--biim-border-light) var(--biim-border-light) var(--biim-border-dark);
+}
+
+.biim-progress-fill {
+  height: 100%;
+  background: linear-gradient(180deg, #00ff00 0%, #00aa00 50%, #006600 100%);
+  transition: width 0.3s ease;
+}
+
+/* イベントログ（biim式） */
+.biim-log {
+  background: #000000;
+  color: #00ff00;
+  font-family: 'DotGothic16', 'Courier New', monospace;
+  font-size: 11px;
+  padding: 4px;
+  overflow-y: auto;
+}
+
+.biim-log-entry {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* キャラクター配置 */
+.biim-character {
+  position: relative;
+}
+
+/* 点滅アニメーション */
+@keyframes biim-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.biim-blink {
+  animation: biim-blink 1s infinite;
+}
+
+/* ステータスインジケーター */
+.biim-status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 4px;
+}
+
+.biim-status-ok { background: #00ff00; }
+.biim-status-warn { background: #ffff00; }
+.biim-status-error { background: #ff0000; }
