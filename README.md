@@ -108,7 +108,6 @@ Emotion types:
 | `normal` | `neutral` | Compatibility alias for neutral |
 | `happy` | `happy` | Positive or pleased expression |
 | `joy` | `happy` | Compatibility alias for happy |
-| `surprised` | `happy` | Compatibility alias currently rendered as happy |
 | `angry` | `angry` | Angry or frustrated expression |
 | `sad` | `sad` | Sad, worried, or unfavorable expression |
 | `thinking` | `thinking` | Thinking or considering expression |
@@ -118,6 +117,10 @@ The protocol type exposes `emotion?: NarrationEmotion | string` so producers
 can send future custom values without breaking the relay. The bundled UI maps
 values to the five available character asset directories: `neutral`, `happy`,
 `angry`, `sad`, and `thinking`.
+
+There is no `surprised` character asset. If an older or custom producer sends
+`surprised`, the current UI treats it as `happy` for backward compatibility,
+but new producers should not rely on it as an official emotion.
 
 Terminal statuses returned to producers:
 

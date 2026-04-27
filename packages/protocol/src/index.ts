@@ -7,7 +7,6 @@ export type NarrationEmotion =
   | "happy"
   | "angry"
   | "sad"
-  | "surprised"
   | "thinking";
 
 export interface NarrationSayMessage {
