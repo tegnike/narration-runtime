@@ -2,6 +2,7 @@ import type { TTSSentence } from '../types'
 import { VOICEVOX_SPEAKER_ID, FLUSH_TIMEOUT_MS, MAX_TTS_QUEUE } from '../constants'
 import { extractSentences } from './sentence-splitter'
 import { synthesizeVoice } from './voicevox-client'
+import type { VoiceSynthesisOptions } from './voicevox-client'
 import type { AudioPlayer } from './audio-player'
 
 export class TTSPipeline {
@@ -60,6 +61,7 @@ export class TTSPipeline {
     text: string,
     speakerId: number = VOICEVOX_SPEAKER_ID,
     signal?: AbortSignal,
+    options: VoiceSynthesisOptions = {},
   ): Promise<number> {
     const trimmed = text.trim()
     if (!trimmed) return 0
@@ -73,8 +75,29 @@ export class TTSPipeline {
     this.notifyBusyChange()
 
     try {
-      const audioData = await synthesizeVoice(trimmed, speakerId, signal)
-      await this.audioPlayer.play(audioData)
+      const audioData = await synthesizeVoice(trimmed, speakerId, signal, options)
+      if (signal?.aborted) {
+        throw new DOMException('Aborted', 'AbortError')
+      }
+      if (!signal) {
+        await this.audioPlayer.play(audioData)
+        return Math.round(performance.now() - startedAt)
+      }
+      let onAbort: (() => void) | null = null
+      const abortPromise = new Promise<never>((_, reject) => {
+        onAbort = () => {
+          this.audioPlayer.stop()
+          reject(new DOMException('Aborted', 'AbortError'))
+        }
+        signal.addEventListener('abort', onAbort, { once: true })
+      })
+      try {
+        await Promise.race([this.audioPlayer.play(audioData), abortPromise])
+      } finally {
+        if (onAbort) {
+          signal.removeEventListener('abort', onAbort)
+        }
+      }
       return Math.round(performance.now() - startedAt)
     } finally {
       this.isProcessing = false

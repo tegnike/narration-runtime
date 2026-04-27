@@ -52,7 +52,7 @@ Default endpoints:
 | Service | URL |
 |---|---|
 | Relay WebSocket | `ws://localhost:3010/ws/narration` |
-| Relay status API | `http://localhost:3010/api/narration/status` |
+| Relay status/capabilities API | `http://localhost:3010/api/narration/status` |
 | UI dev server | `http://localhost:5175` |
 | VOICEVOX Engine | `http://127.0.0.1:50021` via `/voicevox` proxy |
 
@@ -94,6 +94,12 @@ Producer utterance:
   "speaker": "nike",
   "emotion": "thinking",
   "interrupt": false,
+  "pace": "normal",
+  "intensity": "normal",
+  "priority": 0,
+  "queuePolicy": "enqueue",
+  "maxQueueMs": 5000,
+  "subtitleOnly": false,
   "metadata": {
     "source": "my-app"
   }
@@ -121,14 +127,71 @@ custom producer sends `normal`, the current UI treats it as `neutral`; `joy`
 and `surprised` are treated as `happy`. New producers should use only the five
 official emotions above.
 
+Supported capabilities are machine-readable from the protocol package and the
+relay status API:
+
+```ts
+import {
+  NARRATION_SUPPORTED_EMOTIONS,
+  NARRATION_SUPPORTED_PACES,
+  NARRATION_SUPPORTED_INTENSITIES,
+  NARRATION_SUPPORTED_QUEUE_POLICIES,
+} from "@narration-runtime/protocol";
+```
+
+```bash
+curl http://localhost:3010/api/narration/status
+```
+
+The status response includes `supportedEmotions`, `supportedPaces`,
+`supportedIntensities`, and `supportedQueuePolicies`.
+
+Speaking style controls:
+
+| Field | Values | Description |
+|---|---|---|
+| `pace` | `slow`, `normal`, `fast`, or numeric `0.5..2` | Maps to VOICEVOX speed. |
+| `intensity` | `low`, `normal`, `high`, or numeric `0..2` | Maps to VOICEVOX intonation/volume. |
+| `priority` | number, default `0` | Higher values play before lower values in the UI queue. |
+| `subtitleOnly` | boolean, default `false` | Shows subtitles and completes without TTS synthesis. |
+
+Queue controls:
+
+| Field | Values | Description |
+|---|---|---|
+| `interrupt` | boolean | Immediately aborts current playback and clears queued items. |
+| `queuePolicy` | `enqueue` | Default. Queue normally; higher priority items are selected first. |
+| `queuePolicy` | `dropIfBusy` | Skip immediately if the UI is speaking or already has queued items. |
+| `queuePolicy` | `replaceIfHigherPriority` | Replace current/queued playback only if this item has higher priority. |
+| `maxQueueMs` | number | Skip if the item waits longer than this before playback starts. |
+
 Terminal statuses returned to producers:
 
 - `narration:completed`
 - `narration:failed`
 - `narration:skipped`
 
+Status messages include `reason` for log analysis. For example, no UI clients
+returns `narration:skipped` with `reason: "no_ui_clients"`, queue drops use
+`queue_drop_busy`, priority replacement uses `queue_replaced_by_priority`, and
+UI acknowledgement timeout returns `narration:failed` with `reason: "timeout"`.
+
 If no UI client is connected, the relay returns `narration:skipped`. If the UI
 does not acknowledge before the timeout, the relay returns `narration:failed`.
+
+Producer-suppressed narration can be sent as an observer/UI-visible event when
+the producer intentionally stays silent:
+
+```ts
+await client.suppress({
+  text: "Low-value explanation suppressed during combat.",
+  reason: "producer_suppressed",
+  metadata: { source: "ai-agent-game-streamer" },
+});
+```
+
+The relay broadcasts this as `narration:suppressed`; it is not queued for TTS
+and does not create a producer completion status.
 
 ## Producer Client
 
@@ -146,6 +209,10 @@ const result = await client.say({
   text: "ここは慎重にいきます。",
   speaker: "nike",
   emotion: "thinking",
+  pace: "slow",
+  intensity: "low",
+  priority: 1,
+  queuePolicy: "enqueue",
 });
 await client.close();
 ```

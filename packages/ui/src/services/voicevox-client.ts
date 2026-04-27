@@ -1,9 +1,16 @@
 import { VOICEVOX_URL } from '../constants'
 
+export interface VoiceSynthesisOptions {
+  speedScale?: number;
+  intonationScale?: number;
+  volumeScale?: number;
+}
+
 export async function synthesizeVoice(
   text: string,
   speakerId: number,
   signal?: AbortSignal,
+  options: VoiceSynthesisOptions = {},
 ): Promise<ArrayBuffer> {
   // Step 1: audio_query
   const queryRes = await fetch(
@@ -12,7 +19,13 @@ export async function synthesizeVoice(
   )
   if (!queryRes.ok) throw new Error(`audio_query failed: ${queryRes.status}`)
   const query = await queryRes.json()
-  query.speedScale = 1.1
+  query.speedScale = options.speedScale ?? 1.1
+  if (options.intonationScale !== undefined) {
+    query.intonationScale = options.intonationScale
+  }
+  if (options.volumeScale !== undefined) {
+    query.volumeScale = options.volumeScale
+  }
 
   // Step 2: synthesis
   const synthRes = await fetch(

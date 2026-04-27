@@ -5,6 +5,9 @@ import type {
   NarrationSayMessage,
   NarrationServerMessage,
   NarrationStatusMessage,
+  NarrationStatusReason,
+  NarrationSuppressedInput,
+  NarrationSuppressedMessage,
 } from "@narration-runtime/protocol";
 
 const DEFAULT_TIMEOUT_MS = 45_000;
@@ -70,23 +73,23 @@ export class NarrationClientAdapter {
     const text = input.text.trim();
 
     if (!text) {
-      return this.skippedStatus(id, "Narration text is empty");
+      return this.skippedStatus(id, "empty_text", "Narration text is empty");
     }
 
     if (this.closed) {
-      return this.handleUnavailable(id, "Narration client is closed");
+      return this.handleUnavailable(id, "client_closed", "Narration client is closed");
     }
 
     if (!this.isOpen()) {
       if (!this.reconnectOnSend) {
-        return this.handleUnavailable(id, "Narration relay is not connected");
+        return this.handleUnavailable(id, "relay_not_connected", "Narration relay is not connected");
       }
 
       await this.connect();
     }
 
     if (!this.isOpen()) {
-      return this.handleUnavailable(id, "Narration relay is not connected");
+      return this.handleUnavailable(id, "relay_not_connected", "Narration relay is not connected");
     }
 
     const message: NarrationSayMessage = {
@@ -96,6 +99,12 @@ export class NarrationClientAdapter {
       speaker: input.speaker,
       emotion: input.emotion ?? "neutral",
       interrupt: input.interrupt ?? false,
+      pace: input.pace,
+      intensity: input.intensity,
+      priority: input.priority,
+      subtitleOnly: input.subtitleOnly,
+      queuePolicy: input.queuePolicy,
+      maxQueueMs: input.maxQueueMs,
       metadata: input.metadata,
       timestamp: input.timestamp ?? Date.now(),
     };
@@ -105,6 +114,7 @@ export class NarrationClientAdapter {
         this.finishPending({
           type: "narration:failed",
           id,
+          reason: "timeout",
           error: "Narration completion timed out",
           timestamp: Date.now(),
         });
@@ -116,13 +126,65 @@ export class NarrationClientAdapter {
       try {
         this.ws!.send(JSON.stringify(message), (error) => {
           if (error) {
-            this.finishUnavailablePending(id, `Narration send failed: ${error.message}`);
+            this.finishUnavailablePending(id, "send_failed", `Narration send failed: ${error.message}`);
           }
         });
       } catch (error) {
-        this.finishUnavailablePending(id, error instanceof Error ? error.message : "Narration send failed");
+        this.finishUnavailablePending(id, "send_failed", error instanceof Error ? error.message : "Narration send failed");
       }
     });
+  }
+
+  async suppress(input: NarrationSuppressedInput): Promise<string> {
+    const id = input.id ?? this.nextId();
+
+    if (this.closed) {
+      this.handleUnavailable(id, "client_closed", "Narration client is closed");
+      return id;
+    }
+
+    if (!this.isOpen()) {
+      if (!this.reconnectOnSend) {
+        this.handleUnavailable(id, "relay_not_connected", "Narration relay is not connected");
+        return id;
+      }
+
+      await this.connect();
+    }
+
+    if (!this.isOpen()) {
+      this.handleUnavailable(id, "relay_not_connected", "Narration relay is not connected");
+      return id;
+    }
+
+    const message: NarrationSuppressedMessage = {
+      type: "narration:suppressed",
+      id,
+      text: input.text?.trim() || undefined,
+      speaker: input.speaker,
+      emotion: input.emotion,
+      reason: input.reason ?? "producer_suppressed",
+      metadata: input.metadata,
+      timestamp: input.timestamp ?? Date.now(),
+    };
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        this.ws!.send(JSON.stringify(message), (error) => {
+          if (error) {
+            reject(new Error(`Narration suppress send failed: ${error.message}`));
+            return;
+          }
+          resolve();
+        });
+      });
+    } catch (error) {
+      if (this.unavailableBehavior === "throw") {
+        throw error;
+      }
+    }
+
+    return id;
   }
 
   async close(): Promise<void> {
@@ -280,14 +342,14 @@ export class NarrationClientAdapter {
       if (this.unavailableBehavior === "throw") {
         pending.reject(new Error(reason));
       } else {
-        pending.resolve(this.skippedStatus(id, reason));
+        pending.resolve(this.skippedStatus(id, "connection_closed", reason));
       }
     }
 
     this.emitBusyIfChanged();
   }
 
-  private finishUnavailablePending(id: string, reason: string): void {
+  private finishUnavailablePending(id: string, reason: NarrationStatusReason, error: string): void {
     const pending = this.pending.get(id);
     if (!pending) {
       return;
@@ -297,27 +359,28 @@ export class NarrationClientAdapter {
     this.pending.delete(id);
 
     if (this.unavailableBehavior === "throw") {
-      pending.reject(new Error(reason));
+      pending.reject(new Error(error));
     } else {
-      pending.resolve(this.skippedStatus(id, reason));
+      pending.resolve(this.skippedStatus(id, reason, error));
     }
 
     this.emitBusyIfChanged();
   }
 
-  private handleUnavailable(id: string, reason: string): NarrationStatusMessage {
+  private handleUnavailable(id: string, reason: NarrationStatusReason, error: string): NarrationStatusMessage {
     if (this.unavailableBehavior === "throw") {
-      throw new Error(reason);
+      throw new Error(error);
     }
 
-    return this.skippedStatus(id, reason);
+    return this.skippedStatus(id, reason, error);
   }
 
-  private skippedStatus(id: string, reason: string): NarrationStatusMessage {
+  private skippedStatus(id: string, reason: NarrationStatusReason, error: string): NarrationStatusMessage {
     return {
       type: "narration:skipped",
       id,
-      error: reason,
+      reason,
+      error,
       timestamp: Date.now(),
     };
   }

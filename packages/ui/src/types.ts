@@ -4,7 +4,9 @@ export type {
   NarrationSayMessage,
   NarrationServerMessage,
   NarrationStateMessage,
+  NarrationStatusReason,
   NarrationStatusMessage,
+  NarrationSuppressedMessage,
 } from "@narration-runtime/protocol";
 
 export type ConnectionStatus =

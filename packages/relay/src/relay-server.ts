@@ -1,11 +1,16 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { WebSocket, WebSocketServer } from "ws";
-import type {
-  NarrationClientMessage,
-  NarrationClientRole,
-  NarrationSayMessage,
-  NarrationServerMessage,
-  NarrationStatusMessage,
+import {
+  NARRATION_SUPPORTED_EMOTIONS,
+  NARRATION_SUPPORTED_INTENSITIES,
+  NARRATION_SUPPORTED_PACES,
+  NARRATION_SUPPORTED_QUEUE_POLICIES,
+  type NarrationClientMessage,
+  type NarrationClientRole,
+  type NarrationSayMessage,
+  type NarrationServerMessage,
+  type NarrationStatusMessage,
+  type NarrationSuppressedMessage,
 } from "@narration-runtime/protocol";
 
 const DEFAULT_ACK_TIMEOUT_MS = 45_000;
@@ -107,18 +112,24 @@ export class NarrationRelayServer {
       speaker: input.speaker,
       emotion: input.emotion ?? "neutral",
       interrupt: input.interrupt ?? false,
+      pace: input.pace,
+      intensity: input.intensity,
+      priority: input.priority,
+      subtitleOnly: input.subtitleOnly,
+      queuePolicy: input.queuePolicy,
+      maxQueueMs: input.maxQueueMs,
       metadata: input.metadata,
       timestamp: Date.now(),
     };
 
     if (!message.text.trim()) {
-      this.broadcastStatus({ type: "narration:skipped", id, timestamp: Date.now() });
+      this.broadcastStatus({ type: "narration:skipped", id, reason: "empty_text", timestamp: Date.now() });
       return id;
     }
 
     if (this.getUiClientCount() === 0) {
       console.debug(`[Narration] skipped ${id}: no UI clients`);
-      this.broadcastStatus({ type: "narration:skipped", id, timestamp: Date.now() });
+      this.broadcastStatus({ type: "narration:skipped", id, reason: "no_ui_clients", timestamp: Date.now() });
       return id;
     }
 
@@ -127,6 +138,7 @@ export class NarrationRelayServer {
       this.finishPending({
         type: "narration:failed",
         id,
+        reason: "timeout",
         error: "Narration UI acknowledgement timed out",
         timestamp: Date.now(),
       });
@@ -135,7 +147,7 @@ export class NarrationRelayServer {
     const uiClient = this.getUiClients()[0];
     if (!uiClient) {
       console.debug(`[Narration] skipped ${id}: no UI clients`);
-      this.broadcastStatus({ type: "narration:skipped", id, timestamp: Date.now() });
+      this.broadcastStatus({ type: "narration:skipped", id, reason: "no_ui_clients", timestamp: Date.now() });
       return id;
     }
 
@@ -147,6 +159,23 @@ export class NarrationRelayServer {
     return id;
   }
 
+  publishSuppressed(input: Omit<NarrationSuppressedMessage, "type" | "id"> & { id?: string }): string {
+    const id = input.id ?? `utt_${Date.now()}_${++this.counter}`;
+    const message: NarrationSuppressedMessage = {
+      type: "narration:suppressed",
+      id,
+      text: input.text?.trim() || undefined,
+      speaker: input.speaker,
+      emotion: input.emotion,
+      reason: input.reason ?? "producer_suppressed",
+      metadata: input.metadata,
+      timestamp: input.timestamp ?? Date.now(),
+    };
+
+    this.broadcast(message, (client) => client.role === "ui" || client.role === "observer");
+    return id;
+  }
+
   private getUiClients(): Client[] {
     return [...this.clients].filter((client) => client.role === "ui");
   }
@@ -154,12 +183,7 @@ export class NarrationRelayServer {
   private handleConnection(ws: WebSocket): void {
     const client: Client = { ws, role: "observer" };
     this.clients.add(client);
-    this.send(client, {
-      type: "narration:ready",
-      role: client.role,
-      uiClients: this.getUiClientCount(),
-      pendingCount: this.pending.size,
-    });
+    this.send(client, this.readyMessage(client.role));
     this.broadcastState();
 
     ws.on("message", (raw) => {
@@ -189,17 +213,16 @@ export class NarrationRelayServer {
         client.role = msg.role;
         client.clientName = msg.clientName;
         console.info(`[Narration] client role=${client.role}${client.clientName ? ` name=${client.clientName}` : ""}`);
-        this.send(client, {
-          type: "narration:ready",
-          role: client.role,
-          uiClients: this.getUiClientCount(),
-          pendingCount: this.pending.size,
-        });
+        this.send(client, this.readyMessage(client.role));
         this.broadcastState();
         break;
 
       case "narration:say":
         this.publishSay(msg);
+        break;
+
+      case "narration:suppressed":
+        this.publishSuppressed(msg);
         break;
 
       case "narration:started":
@@ -209,9 +232,35 @@ export class NarrationRelayServer {
       case "narration:completed":
       case "narration:failed":
       case "narration:skipped":
-        this.finishPending({ ...msg, timestamp: msg.timestamp ?? Date.now() });
+        this.finishPending(this.withDefaultStatusReason(msg));
         break;
     }
+  }
+
+  private readyMessage(role: NarrationClientRole) {
+    return {
+      type: "narration:ready" as const,
+      role,
+      uiClients: this.getUiClientCount(),
+      pendingCount: this.pending.size,
+      supportedEmotions: NARRATION_SUPPORTED_EMOTIONS,
+      supportedPaces: NARRATION_SUPPORTED_PACES,
+      supportedIntensities: NARRATION_SUPPORTED_INTENSITIES,
+      supportedQueuePolicies: NARRATION_SUPPORTED_QUEUE_POLICIES,
+    };
+  }
+
+  private withDefaultStatusReason(status: NarrationStatusMessage): NarrationStatusMessage {
+    if (status.reason) {
+      return { ...status, timestamp: status.timestamp ?? Date.now() };
+    }
+    const reason =
+      status.type === "narration:completed"
+        ? "ui_completed"
+        : status.type === "narration:failed"
+          ? "ui_failed"
+          : "ui_skipped";
+    return { ...status, reason, timestamp: status.timestamp ?? Date.now() };
   }
 
   private finishPending(status: NarrationStatusMessage): void {
@@ -235,6 +284,10 @@ export class NarrationRelayServer {
       uiClients: this.getUiClientCount(),
       pendingCount: this.pending.size,
       busy: this.isBusy(),
+      supportedEmotions: NARRATION_SUPPORTED_EMOTIONS,
+      supportedPaces: NARRATION_SUPPORTED_PACES,
+      supportedIntensities: NARRATION_SUPPORTED_INTENSITIES,
+      supportedQueuePolicies: NARRATION_SUPPORTED_QUEUE_POLICIES,
     });
   }
 
@@ -280,6 +333,10 @@ export class NarrationRelayServer {
         uiClients: this.getUiClientCount(),
         pendingCount: this.pending.size,
         busy: this.isBusy(),
+        supportedEmotions: NARRATION_SUPPORTED_EMOTIONS,
+        supportedPaces: NARRATION_SUPPORTED_PACES,
+        supportedIntensities: NARRATION_SUPPORTED_INTENSITIES,
+        supportedQueuePolicies: NARRATION_SUPPORTED_QUEUE_POLICIES,
       }));
       return;
     }

@@ -6,6 +6,9 @@ Standalone WebSocket-driven narration viewer.
 - Receives `narration:say` messages
 - Synthesizes and plays speech with VOICEVOX
 - Sends `narration:started`, `narration:completed`, or `narration:failed`
+- Applies `priority`, `queuePolicy`, `maxQueueMs`, `pace`, `intensity`, and
+  `subtitleOnly` controls from producer messages
+- Displays `narration:suppressed` events in the event log
 
 Run it with:
 

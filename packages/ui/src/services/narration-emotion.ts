@@ -1,12 +1,7 @@
+import { NARRATION_SUPPORTED_EMOTIONS } from '@narration-runtime/protocol'
 import type { NarrationEmotion } from '../types'
 
-export const NARRATION_EMOTIONS: NarrationEmotion[] = [
-  'neutral',
-  'happy',
-  'angry',
-  'sad',
-  'thinking',
-]
+export const NARRATION_EMOTIONS: readonly NarrationEmotion[] = NARRATION_SUPPORTED_EMOTIONS
 
 export function normalizeNarrationEmotion(emotion?: string): NarrationEmotion {
   switch (emotion?.toLowerCase()) {
