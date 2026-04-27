@@ -32,14 +32,14 @@ export function Subtitle() {
     }
   }, [isSpeaking, displayText])
 
-  if (!displayText) return null
-
   return (
-    <div
-      className={`transition-opacity duration-500 ${visible ? 'opacity-100' : 'opacity-0'}`}
-    >
-      <div className="biim-subtitle max-w-2xl mx-auto">
-        {displayText}
+    <div className="biim-dialogue biim-border biim-border-inset">
+      <div
+        className={`biim-dialogue-content transition-opacity duration-500 ${visible ? 'opacity-100' : 'opacity-0'}`}
+      >
+        <div className="biim-dialogue-text">
+          {displayText}
+        </div>
       </div>
     </div>
   )

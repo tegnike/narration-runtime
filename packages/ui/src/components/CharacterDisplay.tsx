@@ -32,7 +32,7 @@ export function CharacterDisplay() {
       <img
         src={`/images/nikechan/${imagePath}`}
         alt="nikechan"
-        className="h-[200px] object-contain"
+        className="biim-character-image object-contain"
       />
     </div>
   )
