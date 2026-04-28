@@ -24,6 +24,8 @@ interface StreamStore {
   // Event log
   eventLog: { time: string; type: string; content: string }[]
   addEventLog: (type: string, content: string) => void
+  thoughtLog: { time: string; content: string }[]
+  addThoughtLog: (content: string) => void
 
   // TTS state
   isSpeaking: boolean
@@ -92,6 +94,16 @@ export const useStreamStore = create<StreamStore>((set) => ({
       ]
       if (next.length > MAX_EVENT_LOG) next.shift()
       return { eventLog: next }
+    }),
+  thoughtLog: [],
+  addThoughtLog: (content) =>
+    set((prev) => {
+      const next = [
+        ...prev.thoughtLog,
+        { time: formatTime(new Date()), content: content.trim() },
+      ]
+      if (next.length > MAX_EVENT_LOG) next.shift()
+      return { thoughtLog: next }
     }),
 
   isSpeaking: false,

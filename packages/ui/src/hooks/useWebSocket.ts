@@ -123,6 +123,7 @@ export function useWebSocket(pipeline: TTSPipeline) {
   const {
     setConnectionStatus,
     addEventLog,
+    addThoughtLog,
     setIsLive,
     setEmotion,
     setSubtitle,
@@ -161,6 +162,7 @@ export function useWebSocket(pipeline: TTSPipeline) {
     setEmotion(emotion)
     send({ type: 'narration:started', id: msg.id, timestamp: Date.now() })
     if (msg.thought?.trim()) {
+      addThoughtLog(msg.thought)
       addEventLog('thought', logPreview(msg.thought))
     }
     addEventLog('say', logPreview(msg.text, 100))
@@ -214,7 +216,7 @@ export function useWebSocket(pipeline: TTSPipeline) {
       currentAbortReason.current = null
       setEmotion('neutral')
     }
-  }, [addEventLog, pipeline, send, sendSkipped, setEmotion, setSubtitle])
+  }, [addEventLog, addThoughtLog, pipeline, send, sendSkipped, setEmotion, setSubtitle])
 
   const processPlaybackQueue = useCallback(async () => {
     if (processingPlayback.current) return
