@@ -1,27 +1,46 @@
 # Narration Runtime UI
 
-Standalone WebSocket-driven narration viewer.
+WebSocket で駆動する単体のナレーション表示 UI です。
 
-- Connects to `ws://localhost:3010/ws/narration`
-- Receives `narration:say` messages
-- Synthesizes and plays speech with VOICEVOX
-- Sends `narration:started`, `narration:completed`, or `narration:failed`
-- Applies `priority`, `queuePolicy`, `maxQueueMs`, `pace`, `intensity`, and
-  `subtitleOnly` controls from producer messages
-- Displays `narration:suppressed` events in the event log
+- `ws://localhost:3010/ws/narration` に接続します
+- `narration:say` メッセージを受信します
+- VOICEVOX で音声を合成して再生します
+- `narration:started`、`narration:completed`、`narration:failed` を送信します
+- 生成側メッセージの `priority`、`queuePolicy`、`maxQueueMs`、`pace`、`intensity`、`subtitleOnly` を適用します
+- `thought` は読み上げず、思考ログとして記録します
+- `narration:suppressed` イベントをイベントログへ表示します
 
-Run it with:
+## 起動
 
-```bash
-npm run ui:dev
-```
-
-The UI expects the relay to be running first:
+先にリレーを起動します。
 
 ```bash
 npm run relay
 ```
 
-Open `http://localhost:5175`, click the audio enable button, and then start a
-producer application. VOICEVOX should be reachable through the Vite proxy at
-`/voicevox`, which targets `http://127.0.0.1:50021`.
+別のターミナルで UI を起動します。
+
+```bash
+npm run ui:dev
+```
+
+`http://localhost:5175` を開き、`音声を有効化` ボタンを押してから生成側アプリケーションを起動します。VOICEVOX は Vite プロキシの `/voicevox` 経由で到達できる必要があり、プロキシ先は `http://127.0.0.1:50021` です。
+
+## 表示仕様
+
+UI は biim 風の固定レイアウトです。左側に 16:9 のゲーム表示領域と下段の字幕枠、右側にステータス、ログ、キャラクターパネルを配置します。画面サイズに合わせてゲーム領域と字幕枠の比率を保ち、キャラクターはパネル中央に収まるよう表示します。
+
+字幕は現在の字幕、発話中状態、または TTS 処理中状態が残っている間は表示を維持します。発話が終わると短い猶予の後にフェードアウトします。長い字幕は枠内で折り返します。
+
+キャラクター表示は、発話中に感情、まばたき、口パク、軽い上下動を反映します。`angry` 表情にも開口/閉口とまばたき用の画像状態があります。
+
+## ログ
+
+ログ領域には `思考` と `イベント` のタブがあります。
+
+| タブ | 内容 |
+|---|---|
+| `思考` | `narration:say` の `thought` を時刻付きで表示します。TTS では読み上げません。 |
+| `イベント` | 接続、状態、発話、抑制、エラーなどのイベントを表示します。 |
+
+各ログは直近50件を表示し、新しいログの追加やタブ切り替え時に末尾へ自動スクロールします。
